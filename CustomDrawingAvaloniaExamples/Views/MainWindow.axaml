@@ -1,0 +1,187 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml'
+        xmlns:controls="clr-namespace:CustomDrawingAvalonia.Controls;assembly=CustomDrawingAvalonia"
+        x:Class="CustomDrawingAvaloniaExamples.Views.MainWindow"
+        Title="Skia API Lease Sandbox"
+        Width="920"
+        Height="680"
+        Background="#E2E8F0">
+  <Grid RowDefinitions="Auto,*">
+    <StackPanel Orientation="Horizontal"
+
+                Spacing="12">
+      <TextBlock Text="Skia API Lease Sandbox"
+                 FontSize="26"
+                 FontWeight="SemiBold"
+                 Foreground="#0F172A" />
+      <Border Background="#2563EB"
+              Padding="8 4"
+              CornerRadius="4">
+        <TextBlock Text="Live"
+                   Foreground="White"
+                   FontSize="12"
+                   VerticalAlignment="Center" />
+      </Border>
+    </StackPanel>
+
+    <TabControl Grid.Row="1"
+                Margin="24"
+                TabStripPlacement="Top"
+                Background="Transparent">
+      <TabItem Header="Dynamic custom draw">
+        <Border CornerRadius="14"
+                Background="#F8FAFC"
+                BorderBrush="#CBD5F5"
+                BorderThickness="1"
+                Padding="20"
+                Margin="0">
+          <Grid RowDefinitions="Auto,*" RowSpacing="12">
+            <StackPanel Orientation="Vertical" Spacing="6">
+              <TextBlock Text="Animated custom draw operation"
+                         FontSize="18"
+                         FontWeight="SemiBold"
+                         Foreground="#0F172A" />
+              <TextBlock
+                Text="Uses ICustomDrawOperation with ISkiaSharpApiLeaseFeature and composition frame scheduling."
+                Opacity="0.85"
+                TextWrapping="Wrap"
+                Foreground="#475569" />
+            </StackPanel>
+            <controls:CustomSkiaLeaseControl Grid.Row="1"
+                                             MinHeight="360"
+                                             Margin="0"
+                                             HorizontalAlignment="Stretch"
+                                             VerticalAlignment="Stretch" />
+          </Grid>
+        </Border>
+      </TabItem>
+      <TabItem Header="GPU surface tiling">
+        <Border CornerRadius="14"
+                Background="#F8FAFC"
+                BorderBrush="#CBD5F5"
+                BorderThickness="1"
+                Padding="20"
+                Margin="0">
+          <Grid RowDefinitions="Auto,*" RowSpacing="12">
+            <StackPanel Orientation="Vertical" Spacing="6">
+              <TextBlock Text="GRContext-backed off-screen surface"
+                         FontSize="18"
+                         FontWeight="SemiBold"
+                         Foreground="#0F172A" />
+              <TextBlock
+                Text="Creates an SKSurface against the leased GRContext, draws off-screen, then tiles the GPU texture into the control output."
+                Opacity="0.85"
+                TextWrapping="Wrap"
+                Foreground="#475569" />
+            </StackPanel>
+            <controls:SkiaGpuSurfaceControl Grid.Row="1"
+                                            MinHeight="360"
+                                            Margin="0"
+                                            HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Stretch" />
+          </Grid>
+        </Border>
+      </TabItem>
+
+      <TabItem Header="Dynamic composition visual">
+        <Border CornerRadius="14"
+                Background="#F8FAFC"
+                BorderBrush="#CBD5F5"
+                BorderThickness="1"
+                Padding="20">
+          <Grid RowDefinitions="Auto,*" RowSpacing="12">
+            <StackPanel Orientation="Vertical" Spacing="6">
+              <TextBlock Text="Animated composition custom visual"
+                         FontSize="18"
+                         FontWeight="SemiBold"
+                         Foreground="#0F172A" />
+              <TextBlock Text="Demonstrates CompositionCustomVisualHandler leveraging Skia API leases."
+                         Opacity="0.85"
+                         TextWrapping="Wrap"
+                         Foreground="#475569" />
+            </StackPanel>
+            <controls:SkiaCompositionVisualHost Grid.Row="1"
+                                                MinHeight="360"
+                                                Margin="0"
+                                                HorizontalAlignment="Stretch"
+                                                VerticalAlignment="Stretch" />
+          </Grid>
+        </Border>
+      </TabItem>
+
+      <TabItem Header="Static custom draw">
+        <Border CornerRadius="14"
+                Background="#FDFDFE"
+                BorderBrush="#CBD5F5"
+                BorderThickness="1"
+                Padding="20">
+          <Grid RowDefinitions="Auto,Auto,*" RowSpacing="12">
+            <StackPanel Orientation="Vertical" Spacing="6">
+              <TextBlock Text="Static custom draw operation"
+                         FontSize="18"
+                         FontWeight="SemiBold"
+                         Foreground="#0F172A" />
+              <TextBlock Text="Manual invalidation via button regenerates the Skia draw operation content."
+                         Opacity="0.85"
+                         TextWrapping="Wrap"
+                         Foreground="#475569" />
+            </StackPanel>
+            <Button Grid.Row="1"
+                    Content="Regenerate"
+                    HorizontalAlignment="Left"
+                    Padding="18 8"
+                    Background="#2563EB"
+                    Foreground="White"
+                    Click="OnStaticCustomDrawRefresh" />
+            <Border Grid.Row="2"
+                    Background="#EEF2FF"
+                    CornerRadius="10"
+                    Padding="0">
+              <controls:StaticCustomSkiaControl x:Name="StaticCustomDrawControl"
+                                                MinHeight="320"
+                                                HorizontalAlignment="Stretch"
+                                                VerticalAlignment="Stretch" />
+            </Border>
+          </Grid>
+        </Border>
+      </TabItem>
+
+      <TabItem Header="Static composition visual">
+        <Border CornerRadius="14"
+                Background="#FDFDFE"
+                BorderBrush="#CBD5F5"
+                BorderThickness="1"
+                Padding="20">
+          <Grid RowDefinitions="Auto,Auto,*" RowSpacing="12">
+            <StackPanel Orientation="Vertical" Spacing="6">
+              <TextBlock Text="Static composition custom visual"
+                         FontSize="18"
+                         FontWeight="SemiBold"
+                         Foreground="#0F172A" />
+              <TextBlock Text="Button click sends a handler message to invalidate and redraw using Skia leases."
+                         Opacity="0.85"
+                         TextWrapping="Wrap"
+                         Foreground="#475569" />
+            </StackPanel>
+            <Button Grid.Row="1"
+                    Content="Regenerate"
+                    HorizontalAlignment="Left"
+                    Padding="18 8"
+                    Background="#2563EB"
+                    Foreground="White"
+                    Click="OnStaticCompositionRefresh" />
+            <Border Grid.Row="2"
+                    Background="#EEF2FF"
+                    CornerRadius="10"
+                    Padding="0">
+              <controls:StaticSkiaCompositionVisualHost x:Name="StaticCompositionVisualControl"
+                                                        MinHeight="320"
+                                                        HorizontalAlignment="Stretch"
+                                                        VerticalAlignment="Stretch" />
+            </Border>
+          </Grid>
+        </Border>
+      </TabItem>
+    </TabControl>
+  </Grid>
+</Window>
