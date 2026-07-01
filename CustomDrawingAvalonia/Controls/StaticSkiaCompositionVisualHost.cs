@@ -1,4 +1,5 @@
 #nullable enable
+using System.Diagnostics;
 using Avalonia;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
@@ -14,6 +15,64 @@ public sealed class StaticSkiaCompositionVisualHost : SkiaCompositionVisualHostB
     {
     }
 
+    private bool _isStarted;
+    private void Start()
+    {
+        //_isStarted = this.IsVisible && this.Bounds.Width > 0 && this.Bounds.Height > 0;
+        //if (_isStarted)
+        //{
+        //    Task.Run(() =>
+        //    {
+        //        var delay = 1000.0 / 60;
+        //        var timer = Stopwatch.StartNew();
+        //        while (_isStarted)
+        //        {
+        //            if (timer.ElapsedMilliseconds < delay)
+        //                continue;
+        //            timer.Restart();
+        //            if (this.Dispatcher.CheckAccess())
+        //                this.Refresh();
+        //            else
+        //                this.Dispatcher.Invoke(Refresh);
+        //        }
+        //    });
+        //}
+    }
+
+    private void Stop()
+    {
+        _isStarted = false;
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        this.Start();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        this.Stop();
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == IsVisibleProperty)
+        {
+            if (this.IsVisible)
+            {
+                this.Start();
+            }
+            else
+            {
+                this.Stop();
+            }
+        }
+    }
+
+
     public void Refresh() => RequestManualRefresh();
 
     public sealed class StaticCompositionDrawable : ISkiaCompositionDrawable
@@ -27,10 +86,13 @@ public sealed class StaticSkiaCompositionVisualHost : SkiaCompositionVisualHostB
         private readonly record struct Ring(float RadiusFactor, float Thickness, SKColor Color, float Start, float Sweep);
         private readonly record struct Dot(float RadiusFactor, float Angle, float SizeFactor, SKColor Color);
 
-        public bool RequiresAnimation => false;
+        public bool RequiresAnimation => true;
 
         public void Render(SKCanvas canvas, Size size, TimeSpan elapsed)
         {
+            _rings.Clear();
+            _dots.Clear();
+
             if (_rings.Count == 0)
             {
                 GenerateRings(size);

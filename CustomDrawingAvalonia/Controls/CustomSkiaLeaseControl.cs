@@ -22,8 +22,9 @@ public sealed class CustomSkiaLeaseControl : SkiaLeaseDrawableControl<CustomSkia
         public AnimatedSkiaLeaseDrawable()
         {
             var message = "Skia lease unavailable";
-            var glyphIndices = message.Select(ch => Typeface.Default.GlyphTypeface.GetGlyph(ch)).ToArray();
-            _fallbackGlyphRun = new GlyphRun(Typeface.Default.GlyphTypeface, 16, message.AsMemory(), glyphIndices);
+            //var glyphIndices = message.Select(ch => Typeface.Default.GlyphTypeface.GetGlyph(ch)).ToArray();
+            var glyphIndices = new ushort[message.Length];
+            _fallbackGlyphRun = new GlyphRun(Typeface.Default.GlyphTypeface,16,message.AsMemory(), glyphIndices);
             _fallbackGlyphReference = _fallbackGlyphRun.TryCreateImmutableGlyphRunReference();
         }
 

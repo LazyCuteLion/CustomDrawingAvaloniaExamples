@@ -15,7 +15,11 @@ public partial class MainWindow : Window
         InitializeComponent();
         _staticCustomDrawControl = this.FindControl<StaticCustomSkiaControl>("StaticCustomDrawControl");
         _staticCompositionControl = this.FindControl<StaticSkiaCompositionVisualHost>("StaticCompositionVisualControl");
+        this.RendererDiagnostics.DebugOverlays = Avalonia.Rendering.RendererDebugOverlays.Fps;
+
     }
+
+
 
     private void OnStaticCustomDrawRefresh(object? sender, RoutedEventArgs e)
     {
@@ -25,5 +29,10 @@ public partial class MainWindow : Window
     private void OnStaticCompositionRefresh(object? sender, RoutedEventArgs e)
     {
         _staticCompositionControl?.Refresh();
+    }
+
+    private void Image_Loaded(object? sender, RoutedEventArgs e)
+    {
+        SKRuntimeEffectHelper.SetSource(sender as Control, SKRuntimeEffectHelper.RippleSksl);
     }
 }
