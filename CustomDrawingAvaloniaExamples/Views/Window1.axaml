@@ -1,0 +1,18 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="using:CustomDrawingAvalonia.Controls"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="CustomDrawingAvaloniaExamples.Window1"
+        Title="Window1">
+  <Grid Background="Green" Margin="10">
+    <!---->
+    <Image Source="D:\Pictures\婚纱照精修\MF008432.jpg"  Margin="20" Stretch="Fill"  Loaded="OnLoaded" >
+      <Image.CacheMode>
+        <BitmapCache RenderAtScale="1"/>
+      </Image.CacheMode>
+    </Image>
+
+  </Grid>
+</Window>

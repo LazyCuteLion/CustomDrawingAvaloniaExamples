@@ -16,7 +16,7 @@ namespace CustomDrawingAvaloniaExamples
         {
             if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktopLifetime)
             {
-                desktopLifetime.MainWindow = new MainWindow();
+                desktopLifetime.MainWindow = new Window1();
             }
         }
     }

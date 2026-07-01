@@ -109,7 +109,6 @@ half4 main(float2 coord) {
     {
         private readonly Control _target;
         private CompositionCustomVisual? _visual;
-        private Handler? _handler;
 
         public CompositionVisualHost(Control control, string code)
         {
@@ -153,134 +152,13 @@ half4 main(float2 coord) {
             _target.PointerPressed -= OnPointerPressed;
             ElementComposition.SetElementChildVisual(_target, null);
             _visual = null;
-            _handler?.Dispose();
-        }
-
-        sealed class Handler : CompositionCustomVisualHandler, IDisposable
-        {
-            private SKRuntimeEffect? _effect;
-            private bool _running;
-
-            public Handler(string code)
-            {
-                _effect = SKRuntimeEffect.CreateShader(code, out var errors);
-            }
-
-            public override void OnRender(ImmediateDrawingContext context)
-            {
-                if (_effect == null)
-                {
-                    return;
-                }
-
-                var feature = context.TryGetFeature<ISkiaSharpApiLeaseFeature>();
-                if (feature is null)
-                    return;
-
-                using var lease = feature.Lease();
-
-                if (lease?.SkSurface == null)
-                    return;
-
-                using var snapshot = lease.SkSurface.Snapshot();
-
-                var bounds = this.GetRenderBounds();
-                float width = (float)bounds.Width;
-                float height = (float)bounds.Height;
-                var scaleX = width / snapshot.Width;
-                var scaleY = height / snapshot.Height;
-
-                //lease.SkCanvas.Clear();
-
-                // 3. 设置 Uniforms
-                using var uniforms = new SKRuntimeEffectUniforms(_effect)
-                {
-                    ["time"] = DateTimeOffset.Now.Millisecond / 1000f,
-                };
-                using var source = snapshot.ToShader(
-                    SKShaderTileMode.Clamp, SKShaderTileMode.Clamp,
-                    SKMatrix.CreateScale(scaleX, scaleY));
-                // 4. 设置子着色器 (输入图像)
-                using var children = new SKRuntimeEffectChildren(_effect)
-                {
-                    ["source"] = source
-                };
-
-                // 5. 创建着色器
-                using var shader = _effect.ToShader(uniforms, children);
-
-                // 6. 用 Paint 应用到整个画布
-                using var paint = new SKPaint { Shader = shader };
-                lease.SkCanvas.DrawRect(new SKRect(0, 0, width, height), paint);
-
-                Debug.WriteLine("{0:HH:mm:ss.fff} ({1}) ({2})", DateTimeOffset.Now, bounds.Size, snapshot.Info.Size);
-
-            }
-
-            public override void OnAnimationFrameUpdate()
-            {
-                if (!_running)
-                {
-                    return;
-                }
-
-                Invalidate();
-                RegisterForNextAnimationFrameUpdate();
-            }
-
-            public void Dispose()
-            {
-                _effect?.Dispose();
-                _effect = null;
-            }
-
-        }
-    }
-
-
-
-    public class MyControl : ContentControl
-    {
-        private CompositionCustomVisual? _visual;
-
-        protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
-        {
-            base.OnAttachedToVisualTree(e);
-            var visual = ElementComposition.GetElementVisual(this);
-            if (visual == null)
-            {
-                return;
-            }
-
-            if (_visual != null && _visual.Compositor == visual.Compositor)
-            {
-                return;
-            }
-
-            _visual = visual.Compositor.CreateCustomVisual(new RippleHandler(this));
-            _visual.Size = new Vector(Bounds.Width, Bounds.Height);
-            ElementComposition.SetElementChildVisual(this, _visual);
-            _visual.SendHandlerMessage("start");
-        }
-
-        protected override void OnSizeChanged(SizeChangedEventArgs e)
-        {
-            base.OnSizeChanged(e);
-            _visual!.Size = new Vector(e.NewSize.Width, e.NewSize.Height);
-        }
-
-        protected override void OnPointerPressed(PointerPressedEventArgs e)
-        {
-            base.OnPointerPressed(e);
-            var pos = e.GetPosition(this);
-            // 发送归一化坐标给 Handler
-            var normalizedX = pos.X / Bounds.Width;
-            var normalizedY = pos.Y / Bounds.Height;
-            _visual?.SendHandlerMessage(new Point(normalizedX, normalizedY));
         }
 
 
     }
+
+
+
 
     class RippleHandler : CompositionCustomVisualHandler
     {
@@ -290,7 +168,8 @@ half4 main(float2 coord) {
         private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
         private readonly Control? _target;
         private readonly TopLevel? _root;
-        private Point _location;
+        //private Point _location;
+        private SKRectI _bounds;
         private float _scale = 1.0f;
 
         // 波纹队列：(normalizedX, normalizedY, startTime)
@@ -303,11 +182,10 @@ half4 main(float2 coord) {
         {
             _target = control;
             _root = TopLevel.GetTopLevel(_target);
-            _location = _target!.TransformToVisual(_root!)?.Transform(new Point(0, 0)) ?? new Point(0, 0);
+            UpdateBounds();
             if (_root != null)
             {
                 _scale = (float)_root.RenderScaling;
-                _location *= _scale;
                 _root.ScalingChanged += TopLevel_ScalingChanged;
             }
             _target.LayoutUpdated += _target_LayoutUpdated;
@@ -320,17 +198,39 @@ half4 main(float2 coord) {
 
         private void _target_LayoutUpdated(object? sender, EventArgs e)
         {
-            _location = _target!.TransformToVisual(_root!)?.Transform(new Point(0, 0)) ?? new Point(0, 0);
-            _location *= _scale;
+            UpdateBounds();
+        }
+
+        private void UpdateBounds()
+        {
+            var lt = _target!.TransformToVisual(_root!)?.Transform(new Point(0, 0)) ?? new Point(_target!.Bounds.Left, _target!.Bounds.Top);
+            //var rb = _target!.TransformToVisual(_root!)?.Transform(new Point(_target!.Bounds.Width, _target!.Bounds.Height));
+            
+            _bounds = new SKRectI(
+                (int)(lt.X * _scale),
+                (int)(lt.Y * _scale),
+                (int)((lt.X + _target!.Bounds.Width) * _scale),
+                (int)((lt.Y + _target!.Bounds.Height) * _scale));
+
+            //_bounds = new SKRectI(
+            //    (int)(lt.X),
+            //    (int)(lt.Y),
+            //    (int)((lt.X + _target!.Bounds.Width)),
+            //    (int)((lt.Y + _target!.Bounds.Height)));
         }
 
         private void TopLevel_ScalingChanged(object? sender, EventArgs e)
         {
             _scale = (float)((sender as TopLevel)?.RenderScaling ?? 1.0);
+            //UpdateBounds();
         }
+
+        private Stopwatch _timer;
+        private int _fpsCount;
 
         public override void OnRender(ImmediateDrawingContext context)
         {
+
             if (_rippleEffect == null)
                 return;
 
@@ -340,29 +240,15 @@ half4 main(float2 coord) {
             using var lease = api.Lease();
             if (lease?.SkSurface == null)
                 return;
+            //ease.SkCanvas.DrawRect(_bounds, new SKPaint() { Color = SKColors.Red });
 
             var bounds = this.GetRenderBounds();
             float width = (float)bounds.Size.Width;
             float height = (float)bounds.Size.Height;
 
-            //报错
-            //var location = _target!.TransformToVisual(_root!)?.Transform(new Point(0, 0)) ?? new Point(0, 0);
-            //不报错，但没有后续了
-            //var location = _root!.Dispatcher.Invoke(() => _target!.TranslatePoint(new Point(), _root!));
 
             //SkSurface是整棵树(窗口)的渲染结果
-            using var snapshot = lease.SkSurface.Snapshot(new SKRectI(
-                                                                (int)_location.X,
-                                                                (int)_location.Y,
-                                                                (int)(_location.X + Math.Ceiling(_target!.Bounds.Width * _scale)),
-                                                                (int)(_location.Y + Math.Ceiling(_target!.Bounds.Height * _scale))));
-
-            //if (!Design.IsDesignMode)
-            //{
-            //    using var stream = File.Create("snapshot2.png");
-            //    snapshot.Encode(SKEncodedImageFormat.Png, 100).SaveTo(stream);
-            //}
-
+            using var snapshot = lease.SkSurface.Snapshot(_bounds);
 
             using var contentShader = snapshot.ToShader(SKShaderTileMode.Clamp, SKShaderTileMode.Clamp, SKMatrix.CreateScale(1 / _scale, 1 / _scale));
 
@@ -382,8 +268,18 @@ half4 main(float2 coord) {
 
             using var shader = _rippleEffect.ToShader(uniforms, children);
             using var paint = new SKPaint() { Shader = shader };
-            lease.SkCanvas.Clear();
+            //lease.SkCanvas.Clear();
+            //lease.SkCanvas.Scale(1f / _scale);
             lease.SkCanvas.DrawRect(0, 0, width, height, paint);
+            //lease.SkCanvas.Restore();
+
+            _fpsCount++;
+            if (_timer.ElapsedMilliseconds >= 1000)
+            {
+                Debug.WriteLine($"FPS:{_fpsCount * 1000.0 / _timer.ElapsedMilliseconds:f1}");
+                _fpsCount = 0;
+                _timer.Restart();
+            }
         }
 
         public override void OnAnimationFrameUpdate()
@@ -398,6 +294,7 @@ half4 main(float2 coord) {
             if (message is string)
             {
                 this.RegisterForNextAnimationFrameUpdate();
+                _timer ??= Stopwatch.StartNew();
             }
             else if (message is Point clickPos)
             {

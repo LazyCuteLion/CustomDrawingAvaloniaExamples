@@ -184,18 +184,6 @@
       </TabItem>
     </TabControl>
 
-    <Grid Grid.RowSpan="2" ColumnDefinitions="*,*">
-
-     
-
-      <Border Grid.Column="0" Margin="10" Background="Green" VerticalAlignment="Top" HorizontalAlignment="Left">
-          <Image Source="D:\Pictures\haidishijie.jpg" Stretch="Uniform"  Loaded="Image_Loaded" Margin="20"/>
-      </Border>
-
-      <!--
-       <controls:MyControl Grid.Column="1" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10" Background="Yellow">
-        <Image Source="D:\Pictures\haidishijie.jpg" Stretch="Uniform"  Grid.RowSpan="2" Margin="10"/>
-      </controls:MyControl>-->
-    </Grid>
+   
   </Grid>
 </Window>

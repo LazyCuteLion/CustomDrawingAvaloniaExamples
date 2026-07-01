@@ -31,8 +31,5 @@ public partial class MainWindow : Window
         _staticCompositionControl?.Refresh();
     }
 
-    private void Image_Loaded(object? sender, RoutedEventArgs e)
-    {
-        SKRuntimeEffectHelper.SetSource(sender as Control, SKRuntimeEffectHelper.RippleSksl);
-    }
+    
 }
