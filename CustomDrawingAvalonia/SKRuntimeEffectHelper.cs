@@ -354,8 +354,8 @@ half4 main(float2 coord) {
             using var snapshot = lease.SkSurface.Snapshot(new SKRectI(
                                                                 (int)_location.X,
                                                                 (int)_location.Y,
-                                                                (int)(_location.X + _target!.Bounds.Width * _scale),
-                                                                (int)(_location.Y + _target!.Bounds.Height * _scale)));
+                                                                (int)(_location.X + Math.Ceiling(_target!.Bounds.Width * _scale)),
+                                                                (int)(_location.Y + Math.Ceiling(_target!.Bounds.Height * _scale))));
 
             //if (!Design.IsDesignMode)
             //{
@@ -364,11 +364,11 @@ half4 main(float2 coord) {
             //}
 
 
-            using var contentShader = snapshot.ToShader();
+            using var contentShader = snapshot.ToShader(SKShaderTileMode.Clamp, SKShaderTileMode.Clamp, SKMatrix.CreateScale(1 / _scale, 1 / _scale));
 
             var uniforms = new SKRuntimeEffectUniforms(_rippleEffect)
             {
-                ["iResolution"] = new[] { snapshot.Width, snapshot.Height },
+                ["iResolution"] = new[] { (float)width, (float)height },
                 ["iTime"] = (float)_stopwatch.Elapsed.TotalSeconds,
                 ["iRipple0"] = new[] { _rippleData[0], _rippleData[1], _rippleData[2] },
                 ["iRipple1"] = new[] { _rippleData[3], _rippleData[4], _rippleData[5] },
@@ -383,7 +383,7 @@ half4 main(float2 coord) {
             using var shader = _rippleEffect.ToShader(uniforms, children);
             using var paint = new SKPaint() { Shader = shader };
             lease.SkCanvas.Clear();
-            lease.SkCanvas.DrawRect(0, 0, snapshot.Width, snapshot.Height, paint);
+            lease.SkCanvas.DrawRect(0, 0, width, height, paint);
         }
 
         public override void OnAnimationFrameUpdate()
